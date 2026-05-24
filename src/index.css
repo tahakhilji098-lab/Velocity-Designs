@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #020204;
+  --color-surface-dim: #020204;
+  --color-surface-bright: #121216;
+  --color-surface-container-lowest: #010102;
+  --color-surface-container-low: #030306;
+  --color-surface-container: #040408;
+  --color-surface-container-high: #0b0b10;
+  --color-surface-container-highest: #12121a;
+  --color-on-surface: #dae2fd;
+  --color-on-surface-variant: #cfc2d6;
+  --color-inverse-surface: #dae2fd;
+  --color-inverse-on-surface: #283044;
+  --color-outline: #988d9f;
+  --color-outline-variant: #4d4354;
+  --color-surface-tint: #ddb7ff;
+  --color-primary: #ddb7ff;
+  --color-on-primary: #490080;
+  --color-primary-container: #b76dff;
+  --color-on-primary-container: #400071;
+  --color-inverse-primary: #842bd2;
+  --color-secondary: #44e2cd;
+  --color-on-secondary: #003731;
+  --color-secondary-container: #03c6b2;
+  --color-on-secondary-container: #004d44;
+  --color-tertiary: #c0c1ff;
+  --color-on-tertiary: #1000a9;
+  --color-tertiary-container: #8083ff;
+  --color-on-tertiary-container: #0d0096;
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+  --color-background: #020204;
+
+  --font-plus-jakarta: "Plus Jakarta Sans", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --radius-xs: 0.25rem;
+  --radius-default: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --spacing-container-max: 1280px;
+  --spacing-section-gap: 8rem;
+}
+
+@layer base {
+  body {
+    background-color: #020204 !important;
+    @apply text-on-surface font-inter;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply backdrop-blur-xl border border-white/5 bg-white/2;
+  }
+  .glass-card {
+    @apply backdrop-blur-xl border border-white/5 bg-white/2 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)];
+  }
+  .text-gradient {
+    @apply bg-gradient-to-r from-[#ddb7ff] to-[#44e2cd] bg-clip-text text-transparent;
+  }
+  .glow-border {
+    @apply border border-white/5 shadow-[0_0_20px_rgba(221,183,255,0.05)];
+  }
+  .plasma-bg {
+    background: radial-gradient(circle at 20% 30%, rgba(132, 43, 210, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(3, 198, 178, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, #020204 0%, #010102 100%);
+  }
+  .neon-glow-purple {
+    @apply shadow-[0_0_15px_rgba(221,183,255,0.2)];
+  }
+  .neon-glow-blue {
+    @apply shadow-[0_0_15px_rgba(68,226,205,0.2)];
+  }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes plasma-pulse {
+  0% { transform: scale(0.9) rotate(0deg); opacity: 0.6; }
+  100% { transform: scale(1.15) rotate(18deg); opacity: 0.95; }
+}
