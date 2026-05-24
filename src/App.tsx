@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useMemo } from "react";
+import React, { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { motion, useScroll, useTransform, useSpring } from "motion/react";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Triangle, Search, Bell, Sparkles, PencilRuler, Monitor, PlayCircle, Mail, AtSign, Share2, ArrowRight } from "lucide-react";
@@ -12,13 +12,26 @@ import Lenis from "lenis";
 
 gsap.registerPlugin(ScrollTrigger);
 
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler as EventListener);
+    return () => mq.removeEventListener("change", handler as EventListener);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 const CursorFollower = () => {
+  const isMobile = useIsMobile();
   const dotRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [label, setLabel] = useState('');
   const hoveredRef = useRef(false);
 
   useEffect(() => {
+    if (isMobile) return;
     const dot = dotRef.current;
     if (!dot) return;
     let mouseX = 0, mouseY = 0, currentX = 0, currentY = 0;
@@ -61,7 +74,9 @@ const CursorFollower = () => {
       document.removeEventListener('mouseover', onMouseOver);
       document.removeEventListener('mouseout', onMouseOut);
     };
-  }, []);
+  }, [isMobile]);
+
+  if (isMobile) return null;
 
   return (
     <div
@@ -111,13 +126,28 @@ const MagneticWrapper = ({ children, className = "" }: { children: React.ReactNo
     el.style.transform = '';
   };
 
+  // Touch feedback: momentary scale on tap
+  const onTouchStart = (e: React.TouchEvent) => {
+    const el = elRef.current;
+    if (!el) return;
+    el.style.transform = 'scale(0.97)';
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const el = elRef.current;
+    if (!el) return;
+    el.style.transform = '';
+  };
+
   return (
     <div
       ref={elRef}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
       className={className}
-      style={{ transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}
+      style={{ transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
     >
       {children}
     </div>
@@ -255,31 +285,28 @@ const Navbar = () => {
       initial={{ opacity: 0, y: -24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[92%] max-w-5xl"
+      className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-[100] w-[94%] md:w-[92%] max-w-5xl"
       id="main-nav"
     >
       <div
-        className="w-full px-6 py-3 bg-[#07070a]/50 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-between shadow-[0_0_30px_rgba(144,39,249,0.15)]"
+        className="w-full px-4 md:px-6 py-2.5 md:py-3 bg-[#07070a]/50 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-between shadow-[0_0_30px_rgba(144,39,249,0.15)]"
         id="navbar-capsule"
       >
         {/* Left — Brand */}
-        <Link to="/" className="flex items-center gap-2.5 cursor-pointer group shrink-0" id="logo-container">
+        <Link to="/" className="flex items-center gap-2 md:gap-2.5 cursor-pointer group shrink-0 min-w-0" id="logo-container">
           <div
+            className="w-6 h-6 md:w-7 md:h-7 group-hover:drop-shadow-[0_0_14px_rgba(150,80,255,1)] shrink-0"
             style={{
-              width: "28px",
-              height: "28px",
               backgroundImage: "url('/logo1.png')",
-              backgroundSize: "auto 28px",
+              backgroundSize: "contain",
               backgroundPosition: "left center",
               backgroundRepeat: "no-repeat",
-              flexShrink: 0,
               filter: "drop-shadow(0 0 8px rgba(150,80,255,0.5))",
               transition: "filter 0.3s ease",
             }}
-            className="group-hover:drop-shadow-[0_0_14px_rgba(150,80,255,1)]"
           />
           <span
-            className="font-plus-jakarta text-base font-extrabold tracking-wider text-white/95 whitespace-nowrap"
+            className="font-plus-jakarta text-sm md:text-base font-extrabold tracking-wider text-white/95 whitespace-nowrap"
             id="logo-wordmark"
           >
             Velocity Designs
@@ -307,9 +334,9 @@ const Navbar = () => {
         </div>
 
         {/* Right — Get Started CTA */}
-        <MagneticWrapper className="flex justify-end shrink-0">
+        <div className="flex justify-end shrink-0">
           <button
-            className="relative overflow-hidden group/btn px-5 py-1.5 rounded-full text-sm font-semibold text-white tracking-wide cursor-pointer
+            className="relative overflow-hidden group/btn px-3.5 md:px-5 py-1.5 md:py-1.5 rounded-full text-xs md:text-sm font-semibold text-white tracking-wide cursor-pointer
               bg-white/[0.02] backdrop-blur-sm border border-[#ddb7ff]/40
               hover:border-[#ddb7ff]/70 transition-all duration-500"
             id="get-started-btn"
@@ -324,9 +351,9 @@ const Navbar = () => {
             <span
               className="absolute inset-0 bg-gradient-to-r from-[#44e2cd]/10 to-[#ddb7ff]/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500 rounded-full"
             />
-            <span className="relative z-10">Get Started</span>
+            <span className="relative z-10 whitespace-nowrap">Get Started</span>
           </button>
-        </MagneticWrapper>
+        </div>
       </div>
     </motion.nav>
   );
@@ -375,7 +402,7 @@ const HeroSplitTextReveal = ({ text1, text2 }: { text1: string; text2: string })
       ref={containerRef}
       className="font-inter font-extrabold leading-none tracking-tighter text-white uppercase mb-6 flex flex-col items-center perspective-1000 select-none"
       style={{
-        fontSize: "clamp(2.5rem, 6vw, 6rem)",
+        fontSize: "clamp(2.2rem, 7.5vw, 6rem)",
         textShadow: "0 0 20px rgba(68,226,205,0.2), 0 0 60px rgba(68,226,205,0.08)",
         WebkitFontSmoothing: "antialiased",
         MozOsxFontSmoothing: "grayscale",
@@ -445,7 +472,7 @@ const Hero = () => {
           autoPlay
           loop
           style={{ objectFit: "cover" }}
-          className="w-full h-full opacity-70"
+          className="w-full h-full opacity-60 md:opacity-70"
         />
       </div>
 
@@ -460,7 +487,7 @@ const Hero = () => {
       />
 
       {/* Main Content Area */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-8 flex flex-col items-center justify-center text-center pt-24">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col items-center justify-center text-center pt-20 md:pt-24">
         
         {/* Entrance Animation Container */}
         <motion.div
@@ -470,7 +497,7 @@ const Hero = () => {
             duration: 1.4,
             ease: [0.16, 1, 0.3, 1],
           }}
-          className="flex flex-col items-center justify-center text-center"
+          className="flex flex-col items-center justify-center text-center w-full"
           id="hero-content-outer"
         >
           {/* Nested Motion Div for Weightless Perpetual Floating */}
@@ -481,24 +508,24 @@ const Hero = () => {
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="flex flex-col items-center justify-center text-center"
+            className="flex flex-col items-center justify-center text-center w-full"
             id="hero-content-inner"
           >
             <motion.div
               variants={heroStaggerVariants}
               initial="hidden"
               animate="visible"
-              className="flex flex-col items-center"
+              className="flex flex-col items-center w-full"
             >
               {/* Main Heading */}
-              <motion.div variants={heroChildVariants}>
+              <motion.div variants={heroChildVariants} className="w-full px-2">
                 <HeroSplitTextReveal text1="DESIGN BEYOND" text2="GRAVITY." />
               </motion.div>
 
               {/* Sub-heading */}
               <motion.p
                 variants={heroChildVariants}
-                className="mt-6 max-w-2xl mx-auto text-white/80 text-lg md:text-2xl mb-10 leading-relaxed font-medium font-inter select-none"
+                className="mt-4 md:mt-6 max-w-2xl mx-auto text-white/80 text-fluid-hero-sub mb-8 md:mb-10 leading-relaxed font-medium font-inter select-none px-4"
                 id="hero-subheadline"
               >
                 Breaking free from traditional limitations. Shaping powerful visual ecosystems and compelling digital edits that demand attention.
@@ -513,7 +540,7 @@ const Hero = () => {
                     borderColor: "rgba(132,43,210,0.6)"
                   }}
                   whileTap={{ scale: 0.95 }}
-                  className="font-plus-jakarta font-bold tracking-widest text-sm uppercase text-white bg-white/2 border border-white/5 hover:bg-white/5 px-12 py-5 rounded-full shadow-[0_0_20px_rgba(132,43,210,0.15)] transition-all duration-300 backdrop-blur-xl cursor-pointer"
+                  className="font-plus-jakarta font-bold tracking-widest text-xs md:text-sm uppercase text-white bg-white/2 border border-white/5 hover:bg-white/5 px-8 py-3.5 md:px-12 md:py-5 rounded-full shadow-[0_0_20px_rgba(132,43,210,0.15)] transition-all duration-300 backdrop-blur-xl cursor-pointer"
                   id="hero-launch-workspace-btn"
                 >
                   Launch Workspace
@@ -542,10 +569,10 @@ const TrustedBy = () => {
   const duplicatedBrands = [...brands, ...brands, ...brands, ...brands];
 
   return (
-    <section className="relative w-full h-[60px] flex items-center overflow-hidden border-y border-white/5 bg-[#020204]" id="trusted-by">
+    <section className="relative w-full h-[50px] md:h-[60px] flex items-center overflow-hidden border-y border-white/5 bg-[#020204]" id="trusted-by">
       {/* Viewport Boundary Gradient Fade Masking (Left & Right) */}
-      <div className="absolute inset-y-0 left-0 w-[150px] bg-gradient-to-r from-[#020204] via-[#020204]/80 to-transparent z-10 pointer-events-none" />
-      <div className="absolute inset-y-0 right-0 w-[150px] bg-gradient-to-l from-[#020204] via-[#020204]/80 to-transparent z-10 pointer-events-none" />
+      <div className="absolute inset-y-0 left-0 w-[60px] md:w-[150px] bg-gradient-to-r from-[#020204] via-[#020204]/80 to-transparent z-10 pointer-events-none" />
+      <div className="absolute inset-y-0 right-0 w-[60px] md:w-[150px] bg-gradient-to-l from-[#020204] via-[#020204]/80 to-transparent z-10 pointer-events-none" />
 
       {/* Stylesheet injector for custom marquee animation */}
       <style>{`
@@ -567,7 +594,7 @@ const TrustedBy = () => {
         {duplicatedBrands.map((brand, i) => (
           <div
             key={i}
-            className="flex items-center gap-2.5 text-white/35 hover:text-white/80 transition-colors duration-500 cursor-default select-none whitespace-nowrap text-lg font-bold"
+            className="flex items-center gap-2 md:gap-2.5 text-white/35 hover:text-white/80 transition-colors duration-500 cursor-default select-none whitespace-nowrap text-sm md:text-lg font-bold"
             id={`brand-logo-${i}`}
           >
             {brand.icon && <span className="opacity-70 scale-95">{brand.icon}</span>}
@@ -583,8 +610,10 @@ const TrustedBy = () => {
 
 const Dashboard = () => {
   const cardRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
+    if (isMobile) return;
     const card = cardRef.current;
     if (!card) return;
 
@@ -617,13 +646,13 @@ const Dashboard = () => {
       card.removeEventListener('mouseleave', onMouseLeave);
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [isMobile]);
 
   return (
-    <section className="py-20 md:py-32 px-6 relative bg-transparent flex justify-center overflow-hidden" id="dashboard-section" style={{ perspective: '1200px' }}>
-      {/* Pulsating ambient glow behind dashboard */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0">
-        <div className="w-[600px] h-[600px] bg-purple-600/30 blur-[120px] rounded-full animate-glow-pulse" />
+    <section className="py-16 md:py-32 px-4 md:px-6 relative bg-transparent flex justify-center overflow-hidden" id="dashboard-section" style={{ perspective: '1200px' }}>
+      {/* Pulsating ambient glow behind dashboard — hidden on mobile for performance */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0 hidden md:block">
+        <div className="w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-purple-600/30 blur-[80px] md:blur-[120px] rounded-full animate-glow-pulse" />
       </div>
 
       {/* Glassmorphic dashboard container — no solid background */}
@@ -631,13 +660,13 @@ const Dashboard = () => {
         ref={cardRef}
         id="dashboard-container"
         data-cursor="explore"
-        className="w-full max-w-5xl mx-auto relative z-10 rounded-2xl backdrop-blur-xl bg-white/2 border border-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] cursor-pointer"
-        style={{ transformStyle: 'preserve-3d' }}
+        className="w-full max-w-5xl mx-auto relative z-10 rounded-xl md:rounded-2xl backdrop-blur-xl bg-white/2 border border-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] cursor-pointer"
+        style={{ transformStyle: isMobile ? '' : 'preserve-3d' }}
       >
         <img
           src="/ui.jpeg"
           alt="Velocity OS Dashboard Preview"
-          className="w-full h-auto block rounded-2xl relative z-10 bg-transparent"
+          className="w-full h-auto block rounded-xl md:rounded-2xl relative z-10 bg-transparent"
         />
       </div>
     </section>
@@ -896,7 +925,7 @@ const BentoCard = ({ title, desc, accent, gridClass, Graphic }: {
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       data-cursor="explore"
-      className={`bento-card ${gridClass} relative overflow-hidden group cursor-pointer rounded-3xl`}
+      className={`bento-card ${gridClass} relative overflow-hidden group cursor-pointer rounded-2xl md:rounded-3xl`}
       style={{
         background: 'rgba(255,255,255,0.02)',
         backdropFilter: 'blur(40px)',
@@ -925,15 +954,15 @@ const BentoCard = ({ title, desc, accent, gridClass, Graphic }: {
         style={{ opacity: 0, background: 'transparent', transition: 'opacity 0.3s ease' }}
       />
 
-      <div className="relative z-10 p-10 flex flex-col h-full">
+      <div className="relative z-10 p-6 md:p-10 flex flex-col h-full">
         {/* Full-width decorative graphic */}
-        <div className="w-full h-44 mb-8 flex items-center justify-center bg-white/[0.01] rounded-2xl border border-white/5 overflow-hidden">
+        <div className="w-full h-32 md:h-44 mb-6 md:mb-8 flex items-center justify-center bg-white/[0.01] rounded-xl md:rounded-2xl border border-white/5 overflow-hidden">
           <Graphic />
         </div>
 
-        <h3 className="font-plus-jakarta text-2xl md:text-3xl font-extrabold mb-4 text-white/95 tracking-tight">{title}</h3>
-        <p className="text-gray-400 leading-relaxed text-sm font-medium flex-grow">{desc}</p>
-        <div className="mt-8">
+        <h3 className="font-plus-jakarta text-xl md:text-3xl font-extrabold mb-3 md:mb-4 text-white/95 tracking-tight">{title}</h3>
+        <p className="text-gray-400 leading-relaxed text-xs md:text-sm font-medium flex-grow">{desc}</p>
+        <div className="mt-6 md:mt-8">
           <MagneticButton accent={accent}>Learn More</MagneticButton>
         </div>
       </div>
@@ -973,15 +1002,15 @@ const Services = () => {
   }, []);
 
   return (
-    <section ref={sectionRef} className="py-32 px-6 overflow-hidden relative" id="services">
+    <section ref={sectionRef} className="py-20 md:py-32 px-4 md:px-6 overflow-hidden relative" id="services">
       <motion.div style={{ y: yParallax }} className="absolute -left-10 top-24 z-10 hidden lg:block pointer-events-none select-none">
         <CyberOrb orbType="small" size="w-24 h-24" delay={0.5} className="shadow-[0_0_45px_rgba(132,43,210,0.5)]" />
       </motion.div>
 
       <div className="max-w-container-max mx-auto relative z-10">
-        <div className="text-center mb-24">
-          <h2 className="font-plus-jakarta text-4xl md:text-5xl font-extrabold tracking-tighter text-white/95 mb-4">Our Capabilities</h2>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed font-medium">High-speed execution meets pixel-perfect refinement across every digital touchpoint.</p>
+        <div className="text-center mb-16 md:mb-24 px-2">
+          <h2 className="font-plus-jakarta text-3xl md:text-5xl font-extrabold tracking-tighter text-white/95 mb-3 md:mb-4">Our Capabilities</h2>
+          <p className="text-gray-400 text-sm md:text-lg max-w-2xl mx-auto leading-relaxed font-medium">High-speed execution meets pixel-perfect refinement across every digital touchpoint.</p>
         </div>
 
         <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 bento-grid">
@@ -1080,7 +1109,7 @@ const DeckCard = ({ index, title, category, desc, accent, children, tooltipEl }:
 
   return (
     <div
-      className="deck-card absolute w-full max-w-[380px] md:max-w-[420px]"
+      className="deck-card absolute w-full max-w-[320px] sm:max-w-[380px] md:max-w-[420px]"
       style={{ zIndex: 10 - index }}
     >
       <div
@@ -1109,11 +1138,11 @@ const DeckCard = ({ index, title, category, desc, accent, children, tooltipEl }:
           }}
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-[#020204]/95 via-[#020204]/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-400 flex flex-col justify-end p-8">
-          <span className="text-xs uppercase font-extrabold tracking-widest" style={{ color: accent }}>{category}</span>
-          <h4 className="text-xl font-plus-jakarta font-extrabold text-white mt-1">{title}</h4>
-          <p className="text-xs text-white/60 leading-relaxed font-medium mt-2">{desc}</p>
-          <div className="mt-4">
+        <div className="absolute inset-0 bg-gradient-to-t from-[#020204]/95 via-[#020204]/50 to-transparent opacity-0 md:hover:opacity-100 transition-opacity duration-400 flex flex-col justify-end p-4 md:p-8">
+          <span className="text-[10px] md:text-xs uppercase font-extrabold tracking-widest" style={{ color: accent }}>{category}</span>
+          <h4 className="text-base md:text-xl font-plus-jakarta font-extrabold text-white mt-1">{title}</h4>
+          <p className="text-[10px] md:text-xs text-white/60 leading-relaxed font-medium mt-1 md:mt-2">{desc}</p>
+          <div className="mt-2 md:mt-4">
             <MagneticButton accent={accent}>Learn More</MagneticButton>
           </div>
         </div>
@@ -1176,7 +1205,7 @@ const Portfolio = () => {
   };
 
   return (
-    <section ref={sectionRef} className="py-32 px-6 relative overflow-hidden" id="portfolio">
+    <section ref={sectionRef} className="py-20 md:py-32 px-4 md:px-6 relative overflow-hidden" id="portfolio">
       <BokehField />
 
       <div
@@ -1200,9 +1229,9 @@ const Portfolio = () => {
       </motion.div>
 
       <div className="max-w-container-max mx-auto relative z-10">
-        <div className="text-center mb-24">
-          <h2 className="font-plus-jakarta text-4xl md:text-5xl font-bold text-white mb-4">Our Latest Masterpieces</h2>
-          <p className="text-on-surface-variant text-lg max-w-2xl mx-auto">
+        <div className="text-center mb-16 md:mb-24 px-2">
+          <h2 className="font-plus-jakarta text-3xl md:text-5xl font-bold text-white mb-3 md:mb-4">Our Latest Masterpieces</h2>
+          <p className="text-on-surface-variant text-sm md:text-lg max-w-2xl mx-auto">
             High-contrast visual deliverables spanning bleeding-edge UI designs, identity kits, and marketing web mockups.
           </p>
         </div>
@@ -1210,7 +1239,7 @@ const Portfolio = () => {
         <div
           ref={deckRef}
           onMouseMove={onSectionMouseMove}
-          className="relative flex items-center justify-center min-h-[520px] md:min-h-[560px]"
+          className="relative flex items-center justify-center min-h-[420px] sm:min-h-[520px] md:min-h-[560px]"
         >
           <DeckCard
             index={0}
@@ -1220,8 +1249,8 @@ const Portfolio = () => {
             accent="#44e2cd"
             tooltipEl={tooltipEl}
           >
-            <div className="flex items-center justify-center p-8 bg-gradient-to-tr from-[#000511] to-[#0a0f1c] select-none min-h-[340px] md:min-h-[380px]">
-              <div className="w-[180px] h-[340px] rounded-[30px] border border-white/5 bg-white/[0.01] backdrop-blur-xl p-4 relative overflow-hidden flex flex-col gap-4 shadow-2xl">
+            <div className="flex items-center justify-center p-4 md:p-8 bg-gradient-to-tr from-[#000511] to-[#0a0f1c] select-none min-h-[260px] md:min-h-[380px]">
+              <div className="w-[160px] md:w-[180px] h-[300px] md:h-[340px] rounded-[24px] md:rounded-[30px] border border-white/5 bg-white/[0.01] backdrop-blur-xl p-3 md:p-4 relative overflow-hidden flex flex-col gap-3 md:gap-4 shadow-2xl">
                 <div className="w-16 h-3 bg-white/5 rounded-full mx-auto mb-2" />
                 <div className="p-3 bg-white/[0.02] rounded-xl border border-white/5 flex flex-col gap-2">
                   <span className="text-[8px] text-white/40 uppercase tracking-widest font-bold">Total Balance</span>
@@ -1260,8 +1289,8 @@ const Portfolio = () => {
             accent="#ddb7ff"
             tooltipEl={tooltipEl}
           >
-            <div className="flex items-center justify-center p-8 bg-gradient-to-br from-[#00020a] to-[#0a0f1c] select-none min-h-[340px] md:min-h-[380px]">
-              <div className="w-[280px] h-[190px] rounded-2xl border border-white/5 bg-white/[0.01] p-6 relative overflow-hidden flex flex-col justify-between shadow-2xl">
+            <div className="flex items-center justify-center p-4 md:p-8 bg-gradient-to-br from-[#00020a] to-[#0a0f1c] select-none min-h-[260px] md:min-h-[380px]">
+              <div className="w-[260px] md:w-[280px] h-[170px] md:h-[190px] rounded-xl md:rounded-2xl border border-white/5 bg-white/[0.01] p-4 md:p-6 relative overflow-hidden flex flex-col justify-between shadow-2xl">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded bg-gradient-to-tr from-[#ddb7ff] to-[#842bd2]" />
@@ -1290,8 +1319,8 @@ const Portfolio = () => {
             accent="#842bd2"
             tooltipEl={tooltipEl}
           >
-            <div className="flex items-center justify-center p-6 bg-gradient-to-bl from-[#000511] to-[#0f1423] select-none min-h-[340px] md:min-h-[380px]">
-              <div className="w-[300px] h-[200px] rounded-xl border border-white/5 bg-[#020204]/85 p-4 relative overflow-hidden flex flex-col gap-3 shadow-2xl">
+            <div className="flex items-center justify-center p-4 md:p-6 bg-gradient-to-bl from-[#000511] to-[#0f1423] select-none min-h-[260px] md:min-h-[380px]">
+              <div className="w-[260px] md:w-[300px] h-[180px] md:h-[200px] rounded-xl border border-white/5 bg-[#020204]/85 p-3 md:p-4 relative overflow-hidden flex flex-col gap-2 md:gap-3 shadow-2xl">
                 <div className="flex justify-between items-center pb-2 border-b border-white/5">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
@@ -1332,11 +1361,12 @@ const Portfolio = () => {
 
 const Process = () => {
   const sectionRef = useRef(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-  const pathRef = useRef<SVGPathElement>(null);
-  const pulseRef = useRef<SVGCircleElement>(null);
-  const dotsRef = useRef<(HTMLDivElement | null)[]>([]);
-  const tlRef = useRef<gsap.core.Timeline | null>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start center", "end center"],
+  });
+  const lineScale = useSpring(scrollYProgress, { stiffness: 60, damping: 25 });
+
   const steps = [
     { num: "01", title: "Deep Discovery", sub: "Drop requirements and raw files directly into your secure Stitch-powered dashboard for immediate analysis." },
     { num: "02", title: "Strategic Planning", sub: "Our custom AI model immediately generates dozens of base layouts mapping every design decision." },
@@ -1344,161 +1374,93 @@ const Process = () => {
     { num: "04", title: "Delivery & Scale", sub: "Download your fully layered source files and ready-to-deploy assets optimized for any platform." }
   ];
 
-  useEffect(() => {
-    const svg = svgRef.current;
-    const path = pathRef.current;
-    const pulse = pulseRef.current;
-    const container = sectionRef.current;
-    if (!svg || !path || !pulse || !container) return;
+  const cardVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      transition: {
+        delay: i * 0.15,
+        duration: 0.7,
+        ease: [0.16, 1, 0.3, 1],
+      },
+    }),
+  };
 
-    const buildPath = () => {
-      if (tlRef.current) { tlRef.current.kill(); tlRef.current = null; }
-
-      const rect = container.getBoundingClientRect();
-      const dots = dotsRef.current.filter(Boolean) as HTMLDivElement[];
-      if (dots.length < 4) return;
-
-      svg.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
-      svg.setAttribute('width', String(rect.width));
-      svg.setAttribute('height', String(rect.height));
-
-      const points = dots.map(d => {
-        const r = d.getBoundingClientRect();
-        return { x: r.left - rect.left + r.width / 2, y: r.top - rect.top + r.height / 2 };
-      });
-
-      const [p1, p2, p3, p4] = points;
-      const d = `M${p1.x},${p1.y} L${p2.x},${p2.y} L${p3.x},${p3.y} L${p4.x},${p4.y}`;
-      path.setAttribute('d', d);
-
-      const length = path.getTotalLength();
-      path.style.strokeDasharray = String(length);
-      path.style.strokeDashoffset = String(length);
-      path.style.opacity = '1';
-
-      const startPt = path.getPointAtLength(0);
-      pulse.setAttribute('cx', String(startPt.x));
-      pulse.setAttribute('cy', String(startPt.y));
-
-      const data = { p: 0 };
-      let currentStep = -1;
-
-      tlRef.current = gsap.timeline({
-        scrollTrigger: {
-          trigger: container,
-          start: 'top 75%',
-          end: 'bottom 25%',
-          scrub: 1.5,
-        },
-      });
-
-      tlRef.current.to(path, { strokeDashoffset: 0, duration: 2, ease: 'power3.inOut' }, 0);
-
-      tlRef.current.to(data, {
-        p: 1,
-        duration: 2,
-        ease: 'power3.inOut',
-        onUpdate: () => {
-          const len = path.getTotalLength();
-          const pt = path.getPointAtLength(data.p * len);
-          pulse.setAttribute('cx', String(pt.x));
-          pulse.setAttribute('cy', String(pt.y));
-
-          const newStep = Math.min(Math.floor(data.p * 4), 3);
-          if (newStep !== currentStep) {
-            currentStep = newStep;
-            dots.forEach((_, i) => {
-              const dot = document.getElementById(`step-dot-${i}`);
-              if (dot) dot.classList.toggle('step-active', i <= newStep);
-            });
-          }
-        },
-      }, 0);
-    };
-
-    buildPath();
-
-    const onResize = () => buildPath();
-    window.addEventListener('resize', onResize);
-
-    return () => {
-      window.removeEventListener('resize', onResize);
-      if (tlRef.current) tlRef.current.kill();
-    };
-  }, []);
+  const pulseVariants = {
+    rest: { scale: 1, borderColor: "rgba(255,255,255,0.08)" },
+    hover: {
+      scale: 1.02,
+      borderColor: "rgba(168,85,247,0.5)",
+      boxShadow: "0 0 30px rgba(168,85,247,0.15), 0 0 60px rgba(168,85,247,0.05)",
+      transition: { type: "spring", stiffness: 300, damping: 15 },
+    },
+  };
 
   return (
-    <section ref={sectionRef} className="py-32 px-6 relative overflow-hidden" id="process">
+    <section ref={sectionRef} className="py-20 md:py-32 px-4 md:px-6 relative overflow-hidden" id="process">
       <div className="max-w-5xl mx-auto">
         <motion.h2
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="font-plus-jakarta text-4xl md:text-5xl font-extrabold mb-20 uppercase tracking-tighter text-white/95 text-center"
-          id="process-title"
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="font-plus-jakarta text-3xl md:text-5xl font-extrabold mb-12 md:mb-20 uppercase tracking-tighter text-white/95 text-center"
         >
           Process Architecture
         </motion.h2>
 
-        <div className="relative max-w-4xl mx-auto" id="process-timeline">
-          <svg
-            ref={svgRef}
-            className="absolute inset-0 w-full h-full pointer-events-none z-0"
-            style={{ overflow: 'visible' }}
-          >
-            <defs>
-              <linearGradient id="vertGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#ddb7ff" stopOpacity="0.7" />
-                <stop offset="50%" stopColor="#44e2cd" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#842bd2" stopOpacity="0.6" />
-              </linearGradient>
-              <filter id="energyGlow">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <filter id="pulseGlow">
-                <feGaussianBlur stdDeviation="6" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
-            <path ref={pathRef} className="energy-path-vert" filter="url(#energyGlow)" />
-            <circle ref={pulseRef} r="6" fill="#ddb7ff" filter="url(#pulseGlow)" />
-          </svg>
+        <div className="relative max-w-3xl mx-auto px-2 md:px-0">
+          {/* Vertical connecting line — hidden on mobile */}
+          <motion.div
+            style={{ scaleY: lineScale, originY: 0 }}
+            className="hidden md:block absolute left-[31px] top-0 w-px h-full bg-gradient-to-b from-violet-400 via-violet-500/50 to-violet-400/20 z-0"
+          />
 
-          <div className="relative z-10 space-y-0">
+          <div className="relative z-10 space-y-8 md:space-y-14">
             {steps.map((step, i) => (
-              <div key={i} className="flex gap-6 md:gap-12 items-start group" id={`process-step-${i}`}>
-                {/* Dot / Number */}
-                <div className="flex flex-col items-center pt-3">
-                  <div
-                    className="w-11 h-11 md:w-14 md:h-14 rounded-full flex items-center justify-center relative z-10 transition-all duration-500 group-hover:scale-110 group-hover:shadow-[0_0_40px_rgba(221,183,255,0.3)]"
-                    id={`step-dot-${i}`}
-                    ref={el => { dotsRef.current[i] = el; }}
-                    style={{
-                      background: 'rgba(255,255,255,0.02)',
-                      backdropFilter: 'blur(40px)',
-                      WebkitBackdropFilter: 'blur(40px)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                    }}
+              <motion.div
+                key={i}
+                custom={i}
+                variants={cardVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+                className="flex flex-col md:flex-row gap-4 md:gap-10 items-start"
+              >
+                {/* Step number circle */}
+                <div className="flex flex-row md:flex-col items-center gap-3 md:pt-4 shrink-0">
+                  <motion.div
+                    initial="rest"
+                    whileHover="hover"
+                    whileTap={{ scale: 1.05 }}
+                    variants={pulseVariants}
+                    className="w-10 h-10 md:w-16 md:h-16 rounded-full flex items-center justify-center relative z-10 bg-white/5 backdrop-blur-md border border-white/10"
                   >
-                    <span className="text-xs md:text-sm font-extrabold font-inter text-white/70 group-hover:text-white transition-colors duration-300">{step.num}</span>
-                  </div>
-                  {i < steps.length - 1 && <div className="w-px flex-grow min-h-[4rem] md:min-h-[5rem]" />}
+                    <span className="text-xs md:text-base font-extrabold font-plus-jakarta text-white/80">
+                      {step.num}
+                    </span>
+                  </motion.div>
+                  {i < steps.length - 1 && (
+                    <div className="block md:hidden flex-1 w-px h-5 bg-gradient-to-b from-violet-400/50 to-transparent mx-auto" />
+                  )}
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 pb-16 md:pb-24">
-                  <h3 className="font-inter text-lg md:text-xl font-bold text-white/85 mb-3 tracking-tight group-hover:text-white group-hover:scale-[1.01] transition-all duration-300">{step.title}</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed max-w-lg font-medium group-hover:text-gray-300 transition-colors duration-300">{step.sub}</p>
-                </div>
-              </div>
+                {/* Glassmorphism card */}
+                <motion.div
+                  initial="rest"
+                  whileHover="hover"
+                  variants={pulseVariants}
+                  className="flex-1 w-full p-5 md:p-8 rounded-xl md:rounded-2xl bg-white/5 backdrop-blur-md border border-white/10"
+                >
+                  <h3 className="font-plus-jakarta text-base md:text-2xl font-bold text-white mb-2 md:mb-3 tracking-tight">
+                    {step.title}
+                  </h3>
+                  <p className="text-slate-400 text-xs md:text-sm leading-relaxed font-medium">
+                    {step.sub}
+                  </p>
+                </motion.div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -1510,8 +1472,10 @@ const Process = () => {
 const CTA = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const orbRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
+    if (isMobile) return;
     const section = sectionRef.current;
     if (!section) return;
 
@@ -1541,11 +1505,11 @@ const CTA = () => {
       section.removeEventListener('mousemove', onMouseMove);
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [isMobile]);
 
   return (
-    <section ref={sectionRef} className="py-40 px-6 text-center relative overflow-hidden bg-[#020204]" id="cta-section">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-gradient-to-r from-[#842bd2]/25 to-[#44e2cd]/15 blur-[200px] rounded-full pointer-events-none" />
+    <section ref={sectionRef} className="py-24 md:py-40 px-4 md:px-6 text-center relative overflow-hidden bg-[#020204]" id="cta-section">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] md:w-[1000px] h-[500px] md:h-[1000px] bg-gradient-to-r from-[#842bd2]/25 to-[#44e2cd]/15 blur-[120px] md:blur-[200px] rounded-full pointer-events-none" />
 
       <div ref={el => { orbRefs.current[0] = el; }} className="absolute bottom-[15%] left-[8%] lg:left-[20%] z-20 hidden md:block">
         <CyberOrb orbType="small" size="w-20 h-20" delay={0.2} className="shadow-[0_0_35px_rgba(132,43,210,0.45)]" />
@@ -1559,10 +1523,10 @@ const CTA = () => {
       <div ref={el => { orbRefs.current[3] = el; }} className="absolute bottom-[28%] right-[4%] lg:right-[14%] z-20 hidden md:block">
         <CyberOrb orbType="small" size="w-16 h-16" delay={2} className="shadow-[0_0_30px_rgba(132,43,210,0.45)]" />
       </div>
-      <div ref={el => { orbRefs.current[4] = el; }} className="absolute bottom-[6%] left-[43%] z-20 hidden md:block">
+      <div ref={el => { orbRefs.current[4] = el; }} className="absolute bottom-[4%] md:bottom-[6%] left-[40%] md:left-[43%] z-20 hidden md:block">
         <CyberOrb orbType="small" size="w-10 h-10" delay={0.6} className="shadow-[0_0_20px_rgba(132,43,210,0.3)]" />
       </div>
-      <div ref={el => { orbRefs.current[5] = el; }} className="absolute bottom-[7%] right-[42%] z-20 hidden md:block">
+      <div ref={el => { orbRefs.current[5] = el; }} className="absolute bottom-[5%] md:bottom-[7%] right-[40%] md:right-[42%] z-20 hidden md:block">
         <CyberOrb orbType="small" size="w-9 h-9" delay={1.6} className="shadow-[0_0_20px_rgba(68,226,205,0.3)]" />
       </div>
 
@@ -1585,12 +1549,12 @@ const CTA = () => {
           />
         </div>
 
-        <h2 className="font-plus-jakarta text-5xl md:text-7xl font-extrabold mb-16 tracking-tighter text-white">
+        <h2 className="font-plus-jakarta text-fluid-cta font-extrabold mb-12 md:mb-16 tracking-tighter text-white px-2">
           Ready to Transform Your Digital Presence?
         </h2>
 
         <div
-          className="bg-white/2 backdrop-blur-xl p-2 rounded-full border border-white/10 flex flex-col md:flex-row items-center max-w-2xl mx-auto shadow-2xl relative z-30 transition-all duration-500"
+          className="bg-white/2 backdrop-blur-xl p-1.5 md:p-2 rounded-2xl md:rounded-full border border-white/10 flex flex-col md:flex-row items-center max-w-2xl mx-auto shadow-2xl relative z-30 transition-all duration-500"
           id="cta-input-group"
           onFocus={(e) => e.currentTarget.classList.add('focus-glow')}
           onBlur={(e) => e.currentTarget.classList.remove('focus-glow')}
@@ -1598,13 +1562,13 @@ const CTA = () => {
           <input
             type="email"
             placeholder="Enter your professional email..."
-            className="flex-grow bg-transparent px-8 py-4 outline-none text-on-surface placeholder:text-on-surface-variant/40 text-lg rounded-full"
+            className="flex-grow bg-transparent w-full md:w-auto px-4 md:px-8 py-3 md:py-4 outline-none text-on-surface placeholder:text-on-surface-variant/40 text-sm md:text-lg rounded-full"
             id="cta-email"
           />
-          <MagneticWrapper>
+          <div className="w-full md:w-auto">
             <button
               data-cursor="explore"
-              className="relative overflow-hidden group w-full md:w-auto text-white font-bold px-12 py-4 rounded-full active:scale-95 transition-all duration-500 cursor-pointer"
+              className="relative overflow-hidden group w-full md:w-auto text-white font-bold px-6 md:px-12 py-3 md:py-4 rounded-full active:scale-95 transition-all duration-500 cursor-pointer"
               id="cta-join-btn"
               style={{
                 background: 'rgba(255,255,255,0.02)',
@@ -1631,7 +1595,7 @@ const CTA = () => {
               />
               <span className="relative z-10">Start a Project</span>
             </button>
-          </MagneticWrapper>
+          </div>
         </div>
       </div>
     </section>
@@ -1640,8 +1604,8 @@ const CTA = () => {
 
 const Footer = () => {
   return (
-    <footer className="py-16 px-10 border-t border-white/5 bg-[#020204] flex flex-col items-center gap-12" id="main-footer">
-      <div className="w-full flex flex-col md:flex-row justify-between items-center gap-10">
+    <footer className="py-12 md:py-16 px-4 md:px-10 border-t border-white/5 bg-[#020204] flex flex-col items-center gap-8 md:gap-12" id="main-footer">
+      <div className="w-full flex flex-col md:flex-row justify-between items-center gap-6 md:gap-10">
         <div className="flex flex-col gap-4">
           <div className="font-plus-jakarta text-2xl font-bold tracking-tight text-white flex items-center gap-3">
             <div
@@ -1661,9 +1625,9 @@ const Footer = () => {
           <p className="text-on-surface-variant text-[10px] uppercase tracking-[0.3em] font-bold">Copyright © 2026 Velocity Designs. All rights reserved.</p>
         </div>
         
-        <div className="flex gap-10 text-xs font-bold tracking-widest text-on-surface-variant uppercase">
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 md:gap-10 text-[10px] md:text-xs font-bold tracking-widest text-on-surface-variant uppercase">
           {["Services", "About", "Terms of Service", "Privacy Policy"].map(item => (
-            <a key={item} href="#" className="hover:text-primary transition-colors">{item}</a>
+            <a key={item} href="#" className="hover:text-primary transition-colors whitespace-nowrap">{item}</a>
           ))}
         </div>
 
@@ -1699,13 +1663,13 @@ export default function App() {
 
   return (
     <>
-      {/* Cinematic neo-noir ambient lighting */}
+      {/* Cinematic neo-noir ambient lighting — scaled down on mobile */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" id="ambient-lights">
-        <div className="absolute -top-[20%] -left-[8%] w-[900px] h-[900px] bg-[#842bd2]/15 blur-[150px] rounded-full will-change-transform" />
-        <div className="absolute top-[30%] -right-[10%] w-[700px] h-[700px] bg-[#44e2cd]/10 blur-[150px] rounded-full will-change-transform" />
-        <div className="absolute bottom-[10%] left-[20%] w-[800px] h-[800px] bg-[#ddb7ff]/8 blur-[150px] rounded-full will-change-transform" />
-        <div className="absolute top-[15%] left-[35%] w-[600px] h-[600px] bg-[#d946ef]/10 blur-[150px] rounded-full will-change-transform" />
-        <div className="absolute bottom-[25%] -right-[5%] w-[550px] h-[550px] bg-[#06b6d4]/10 blur-[150px] rounded-full will-change-transform" />
+        <div className="absolute -top-[20%] -left-[8%] w-[400px] md:w-[900px] h-[400px] md:h-[900px] bg-[#842bd2]/15 blur-[80px] md:blur-[150px] rounded-full will-change-transform" />
+        <div className="absolute top-[30%] -right-[10%] w-[300px] md:w-[700px] h-[300px] md:h-[700px] bg-[#44e2cd]/10 blur-[80px] md:blur-[150px] rounded-full will-change-transform" />
+        <div className="absolute bottom-[10%] left-[20%] w-[350px] md:w-[800px] h-[350px] md:h-[800px] bg-[#ddb7ff]/8 blur-[80px] md:blur-[150px] rounded-full will-change-transform" />
+        <div className="absolute top-[15%] left-[35%] w-[250px] md:w-[600px] h-[250px] md:h-[600px] bg-[#d946ef]/10 blur-[80px] md:blur-[150px] rounded-full will-change-transform" />
+        <div className="absolute bottom-[25%] -right-[5%] w-[200px] md:w-[550px] h-[200px] md:h-[550px] bg-[#06b6d4]/10 blur-[80px] md:blur-[150px] rounded-full will-change-transform" />
       </div>
       <BrowserRouter>
       <CursorFollower />
