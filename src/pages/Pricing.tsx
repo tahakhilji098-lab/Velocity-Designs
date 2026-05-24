@@ -2,10 +2,6 @@ import { useState } from "react";
 import { motion, useMotionValue, useSpring } from "motion/react";
 
 const pricingStyles = `
-  @keyframes fadeSlideUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
   @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
@@ -14,10 +10,16 @@ const pricingStyles = `
     0%, 100% { opacity: 0.6; transform: scale(1); }
     50% { opacity: 1; transform: scale(1.05); }
   }
-  .card-entrance-1 { animation: fadeSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 100ms forwards; opacity: 0; }
-  .card-entrance-2 { animation: fadeSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 250ms forwards; opacity: 0; }
-  .card-entrance-3 { animation: fadeSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 400ms forwards; opacity: 0; }
 `;
+
+const pricingCardVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+};
 
 const tiers = [
   {
@@ -119,14 +121,9 @@ function PricingCard({ tier, index }: { tier: typeof tiers[0]; index: number }) 
     mouseY.set(0);
   }
 
-  const entranceClass = tier.highlighted
-    ? "card-entrance-2"
-    : index === 0
-    ? "card-entrance-1"
-    : "card-entrance-3";
-
   return (
     <motion.div
+      variants={pricingCardVariants}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
@@ -136,7 +133,7 @@ function PricingCard({ tier, index }: { tier: typeof tiers[0]; index: number }) 
         "--spot-x": "50%",
         "--spot-y": "50%",
       } as React.CSSProperties}
-      className={`relative ${entranceClass} ${tier.highlighted ? "scale-105" : ""}`}
+      className={`relative ${tier.highlighted ? "scale-105" : ""}`}
     >
       {/* Most Popular Badge — sits above the card, not clipped */}
       {tier.highlighted && (
@@ -217,7 +214,7 @@ function PricingCard({ tier, index }: { tier: typeof tiers[0]; index: number }) 
 
 export default function Pricing() {
   return (
-    <div className="min-h-screen bg-[#000511] relative selection:bg-purple-500/30 selection:text-white overflow-hidden">
+    <div className="min-h-screen bg-[#000511] relative selection:bg-purple-500/30 selection:text-white overflow-x-hidden">
       <style>{pricingStyles}</style>
 
       {/* Ambient Glow Orb */}
@@ -264,11 +261,23 @@ export default function Pricing() {
 
       {/* Pricing Grid */}
       <section className="relative px-6 pb-32 pt-40 overflow-hidden" id="pricing-grid">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-6 mb-24 relative z-10">
+        <motion.div
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: { staggerChildren: 0.2 },
+            },
+          }}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-0 md:px-6 mb-24 relative z-10"
+        >
           {tiers.map((tier, index) => (
             <PricingCard key={tier.name} tier={tier} index={index} />
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* ═══════════════════════════════════════════

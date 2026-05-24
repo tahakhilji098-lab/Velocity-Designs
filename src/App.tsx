@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from "react";
-import { motion, useScroll, useTransform, useSpring } from "motion/react";
+import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "motion/react";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Triangle, Search, Bell, Sparkles, PencilRuler, Monitor, PlayCircle, Mail, AtSign, Share2, ArrowRight } from "lucide-react";
 import ServicesPage from "./pages/Services";
@@ -9,6 +9,7 @@ import PortfolioPage from "./pages/Portfolio";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import Navbar from "./components/Navbar";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -276,88 +277,7 @@ const CyberOrb = ({
   );
 };
 
-/**
- * Navbar — Floating glass capsule pill
- */
-const Navbar = () => {
-  return (
-    <motion.nav
-      initial={{ opacity: 0, y: -24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-[100] w-[94%] md:w-[92%] max-w-5xl"
-      id="main-nav"
-    >
-      <div
-        className="w-full px-4 md:px-6 py-2.5 md:py-3 bg-[#07070a]/50 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-between shadow-[0_0_30px_rgba(144,39,249,0.15)]"
-        id="navbar-capsule"
-      >
-        {/* Left — Brand */}
-        <Link to="/" className="flex items-center gap-2 md:gap-2.5 cursor-pointer group shrink-0 min-w-0" id="logo-container">
-          <div
-            className="w-6 h-6 md:w-7 md:h-7 group-hover:drop-shadow-[0_0_14px_rgba(150,80,255,1)] shrink-0"
-            style={{
-              backgroundImage: "url('/logo1.png')",
-              backgroundSize: "contain",
-              backgroundPosition: "left center",
-              backgroundRepeat: "no-repeat",
-              filter: "drop-shadow(0 0 8px rgba(150,80,255,0.5))",
-              transition: "filter 0.3s ease",
-            }}
-          />
-          <span
-            className="font-plus-jakarta text-sm md:text-base font-extrabold tracking-wider text-white/95 whitespace-nowrap"
-            id="logo-wordmark"
-          >
-            Velocity Designs
-          </span>
-        </Link>
-
-        {/* Center — Navigation Links */}
-        <div className="hidden md:flex items-center gap-x-8" id="nav-links">
-          {["Services", "Portfolio", "About", "Pricing"].map((label) => {
-            const path = `/${label.toLowerCase()}`;
-            return (
-              <Link
-                key={label}
-                to={path}
-                className="relative group text-gray-400 text-sm tracking-wide font-medium hover:text-white transition-colors duration-300"
-              >
-                {label}
-                <span
-                  className="absolute -bottom-[3px] left-1/2 w-full h-[1.5px] bg-[#44e2cd]/70 rounded-full -translate-x-1/2 scale-x-0 group-hover:scale-x-100 transition-transform duration-400 ease-out origin-center"
-                  style={{ boxShadow: '0 0 8px rgba(68,226,205,0.6)' }}
-                />
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Right — Get Started CTA */}
-        <div className="flex justify-end shrink-0">
-          <button
-            className="relative overflow-hidden group/btn px-3.5 md:px-5 py-1.5 md:py-1.5 rounded-full text-xs md:text-sm font-semibold text-white tracking-wide cursor-pointer
-              bg-white/[0.02] backdrop-blur-sm border border-[#ddb7ff]/40
-              hover:border-[#ddb7ff]/70 transition-all duration-500"
-            id="get-started-btn"
-            style={{ boxShadow: '0 0 15px rgba(221,183,255,0.05)' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 0 30px rgba(68,226,205,0.15), 0 0 60px rgba(221,183,255,0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 0 15px rgba(221,183,255,0.05)';
-            }}
-          >
-            <span
-              className="absolute inset-0 bg-gradient-to-r from-[#44e2cd]/10 to-[#ddb7ff]/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500 rounded-full"
-            />
-            <span className="relative z-10 whitespace-nowrap">Get Started</span>
-          </button>
-        </div>
-      </div>
-    </motion.nav>
-  );
-};
+// Navbar extracted to src/components/Navbar.tsx
 
 /**
  * Interactive 3D Canvas Planet with orbital satellite and breathe effect
@@ -970,36 +890,32 @@ const BentoCard = ({ title, desc, accent, gridClass, Graphic }: {
   );
 };
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+};
+
 const Services = () => {
   const sectionRef = useRef(null);
-  const gridRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start end", "end start"]
   });
   const yParallax = useTransform(scrollYProgress, [0, 1], [-80, 80]);
-
-  useEffect(() => {
-    if (!gridRef.current) return;
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        '.bento-card',
-        { y: 60, opacity: 0, scale: 0.95 },
-        {
-          y: 0, opacity: 1, scale: 1,
-          stagger: 0.15,
-          duration: 0.8,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: gridRef.current,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        }
-      );
-    }, gridRef.current);
-    return () => ctx.revert();
-  }, []);
 
   return (
     <section ref={sectionRef} className="py-20 md:py-32 px-4 md:px-6 overflow-hidden relative" id="services">
@@ -1013,29 +929,41 @@ const Services = () => {
           <p className="text-gray-400 text-sm md:text-lg max-w-2xl mx-auto leading-relaxed font-medium">High-speed execution meets pixel-perfect refinement across every digital touchpoint.</p>
         </div>
 
-        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 bento-grid">
-          <BentoCard
-            title="High-Fidelity UI/UX"
-            desc="Hyper-intuitive web and mobile user interfaces, comprehensive design systems, interactive Figma prototypes, and user flows optimized strictly for high conversion."
-            accent="#44e2cd"
-            gridClass="md:col-span-1"
-            Graphic={MiniDashboard}
-          />
-          <BentoCard
-            title="Brand Architecture"
-            desc="AI-enhanced brand identities, complex vector illustrations, dynamic advertising creatives, and high-impact physical or digital marketing collaterals."
-            accent="#ddb7ff"
-            gridClass="md:col-span-1"
-            Graphic={WireframeCube}
-          />
-          <BentoCard
-            title="Post-Production Engineering"
-            desc="Elite-tier video post-production, multi-layered photo manipulation, motion graphics, audio mastering, sound polishing, and algorithmic cinematic color grading."
-            accent="#842bd2"
-            gridClass="md:col-span-1"
-            Graphic={AudioWaveform}
-          />
-        </div>
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 bento-grid"
+        >
+          <motion.div variants={cardVariants}>
+            <BentoCard
+              title="High-Fidelity UI/UX"
+              desc="Hyper-intuitive web and mobile user interfaces, comprehensive design systems, interactive Figma prototypes, and user flows optimized strictly for high conversion."
+              accent="#44e2cd"
+              gridClass="md:col-span-1"
+              Graphic={MiniDashboard}
+            />
+          </motion.div>
+          <motion.div variants={cardVariants}>
+            <BentoCard
+              title="Brand Architecture"
+              desc="AI-enhanced brand identities, complex vector illustrations, dynamic advertising creatives, and high-impact physical or digital marketing collaterals."
+              accent="#ddb7ff"
+              gridClass="md:col-span-1"
+              Graphic={WireframeCube}
+            />
+          </motion.div>
+          <motion.div variants={cardVariants}>
+            <BentoCard
+              title="Post-Production Engineering"
+              desc="Elite-tier video post-production, multi-layered photo manipulation, motion graphics, audio mastering, sound polishing, and algorithmic cinematic color grading."
+              accent="#842bd2"
+              gridClass="md:col-span-1"
+              Graphic={AudioWaveform}
+            />
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   );
@@ -1109,7 +1037,7 @@ const DeckCard = ({ index, title, category, desc, accent, children, tooltipEl }:
 
   return (
     <div
-      className="deck-card absolute w-full max-w-[320px] sm:max-w-[380px] md:max-w-[420px]"
+      className="deck-card absolute w-[90vw] max-w-[320px] sm:max-w-[380px] md:max-w-[420px]"
       style={{ zIndex: 10 - index }}
     >
       <div
@@ -1149,6 +1077,25 @@ const DeckCard = ({ index, title, category, desc, accent, children, tooltipEl }:
       </div>
     </div>
   );
+};
+
+const portfolioContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.25,
+    },
+  },
+};
+
+const portfolioCardVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
 };
 
 const Portfolio = () => {
@@ -1236,124 +1183,131 @@ const Portfolio = () => {
           </p>
         </div>
 
-        <div
-          ref={deckRef}
-          onMouseMove={onSectionMouseMove}
-          className="relative flex items-center justify-center min-h-[420px] sm:min-h-[520px] md:min-h-[560px]"
+        <motion.div
+          variants={portfolioContainerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
         >
-          <DeckCard
-            index={0}
-            title="Nova Fintech App"
-            category="Mobile UI Design"
-            desc="Hyper-minimal finance tracking app interface with responsive chart widgets and glowing glassmorphic elements."
-            accent="#44e2cd"
-            tooltipEl={tooltipEl}
+          <div
+            ref={deckRef}
+            onMouseMove={onSectionMouseMove}
+            className="relative flex items-center justify-center min-h-[420px] sm:min-h-[520px] md:min-h-[560px]"
           >
-            <div className="flex items-center justify-center p-4 md:p-8 bg-gradient-to-tr from-[#000511] to-[#0a0f1c] select-none min-h-[260px] md:min-h-[380px]">
-              <div className="w-[160px] md:w-[180px] h-[300px] md:h-[340px] rounded-[24px] md:rounded-[30px] border border-white/5 bg-white/[0.01] backdrop-blur-xl p-3 md:p-4 relative overflow-hidden flex flex-col gap-3 md:gap-4 shadow-2xl">
-                <div className="w-16 h-3 bg-white/5 rounded-full mx-auto mb-2" />
-                <div className="p-3 bg-white/[0.02] rounded-xl border border-white/5 flex flex-col gap-2">
-                  <span className="text-[8px] text-white/40 uppercase tracking-widest font-bold">Total Balance</span>
-                  <span className="text-xl font-bold font-plus-jakarta text-white">$45,210.80</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2 bg-[#44e2cd]/10 rounded-lg border border-[#44e2cd]/20 flex flex-col">
-                    <span className="text-[6px] text-[#44e2cd] font-bold uppercase">Income</span>
-                    <span className="text-xs font-bold text-white">+12.4%</span>
+            <DeckCard
+              index={0}
+              title="Nova Fintech App"
+              category="Mobile UI Design"
+              desc="Hyper-minimal finance tracking app interface with responsive chart widgets and glowing glassmorphic elements."
+              accent="#44e2cd"
+              tooltipEl={tooltipEl}
+            >
+              <div className="flex items-center justify-center p-4 md:p-8 bg-gradient-to-tr from-[#000511] to-[#0a0f1c] select-none min-h-[260px] md:min-h-[380px]">
+                <div className="w-[160px] md:w-[180px] h-[300px] md:h-[340px] rounded-[24px] md:rounded-[30px] border border-white/5 bg-white/[0.01] backdrop-blur-xl p-3 md:p-4 relative overflow-hidden flex flex-col gap-3 md:gap-4 shadow-2xl">
+                  <div className="w-16 h-3 bg-white/5 rounded-full mx-auto mb-2" />
+                  <div className="p-3 bg-white/[0.02] rounded-xl border border-white/5 flex flex-col gap-2">
+                    <span className="text-[8px] text-white/40 uppercase tracking-widest font-bold">Total Balance</span>
+                    <span className="text-xl font-bold font-plus-jakarta text-white">$45,210.80</span>
                   </div>
-                  <div className="p-2 bg-[#842bd2]/10 rounded-lg border border-[#842bd2]/20 flex flex-col">
-                    <span className="text-[6px] text-[#842bd2] font-bold uppercase">Expense</span>
-                    <span className="text-xs font-bold text-white">-4.2%</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 bg-[#44e2cd]/10 rounded-lg border border-[#44e2cd]/20 flex flex-col">
+                      <span className="text-[6px] text-[#44e2cd] font-bold uppercase">Income</span>
+                      <span className="text-xs font-bold text-white">+12.4%</span>
+                    </div>
+                    <div className="p-2 bg-[#842bd2]/10 rounded-lg border border-[#842bd2]/20 flex flex-col">
+                      <span className="text-[6px] text-[#842bd2] font-bold uppercase">Expense</span>
+                      <span className="text-xs font-bold text-white">-4.2%</span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex-grow p-3 bg-white/[0.01] rounded-xl border border-white/5 flex flex-col justify-between">
-                  <span className="text-[8px] text-white/40 font-bold uppercase">Transactions</span>
-                  <div className="flex items-center justify-between text-[10px] text-white/80">
-                    <span>Vielocity Ltd</span>
-                    <span className="font-bold text-[#44e2cd]">+$1,200</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-white/80">
-                    <span>Stripe Inc</span>
-                    <span className="font-bold">-$45</span>
+                  <div className="flex-grow p-3 bg-white/[0.01] rounded-xl border border-white/5 flex flex-col justify-between">
+                    <span className="text-[8px] text-white/40 font-bold uppercase">Transactions</span>
+                    <div className="flex items-center justify-between text-[10px] text-white/80">
+                      <span>Vielocity Ltd</span>
+                      <span className="font-bold text-[#44e2cd]">+$1,200</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] text-white/80">
+                      <span>Stripe Inc</span>
+                      <span className="font-bold">-$45</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </DeckCard>
+            </DeckCard>
 
-          <DeckCard
-            index={1}
-            title="Aether Nexus Kit"
-            category="Brand Identity"
-            desc="Futuristic identity kit featuring organic shapes, custom modern typography guidelines, and bold brand elements."
-            accent="#ddb7ff"
-            tooltipEl={tooltipEl}
-          >
-            <div className="flex items-center justify-center p-4 md:p-8 bg-gradient-to-br from-[#00020a] to-[#0a0f1c] select-none min-h-[260px] md:min-h-[380px]">
-              <div className="w-[260px] md:w-[280px] h-[170px] md:h-[190px] rounded-xl md:rounded-2xl border border-white/5 bg-white/[0.01] p-4 md:p-6 relative overflow-hidden flex flex-col justify-between shadow-2xl">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded bg-gradient-to-tr from-[#ddb7ff] to-[#842bd2]" />
-                    <span className="text-xs font-bold text-white font-plus-jakarta tracking-wide">Aether Nexus</span>
+            <DeckCard
+              index={1}
+              title="Aether Nexus Kit"
+              category="Brand Identity"
+              desc="Futuristic identity kit featuring organic shapes, custom modern typography guidelines, and bold brand elements."
+              accent="#ddb7ff"
+              tooltipEl={tooltipEl}
+            >
+              <div className="flex items-center justify-center p-4 md:p-8 bg-gradient-to-br from-[#00020a] to-[#0a0f1c] select-none min-h-[260px] md:min-h-[380px]">
+                <div className="w-[260px] md:w-[280px] h-[170px] md:h-[190px] rounded-xl md:rounded-2xl border border-white/5 bg-white/[0.01] p-4 md:p-6 relative overflow-hidden flex flex-col justify-between shadow-2xl">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded bg-gradient-to-tr from-[#ddb7ff] to-[#842bd2]" />
+                      <span className="text-xs font-bold text-white font-plus-jakarta tracking-wide">Aether Nexus</span>
+                    </div>
+                    <span className="text-[8px] text-white/40 font-bold uppercase tracking-widest">Brand Kit v1.0</span>
                   </div>
-                  <span className="text-[8px] text-white/40 font-bold uppercase tracking-widest">Brand Kit v1.0</span>
-                </div>
-                <div className="flex gap-2">
-                  <div className="w-8 h-8 rounded bg-[#ddb7ff] flex items-center justify-center text-[8px] text-black font-bold">#DDB</div>
-                  <div className="w-8 h-8 rounded bg-[#842bd2] flex items-center justify-center text-[8px] text-white font-bold">#842</div>
-                  <div className="w-8 h-8 rounded bg-[#44e2cd] flex items-center justify-center text-[8px] text-black font-bold">#44E</div>
-                  <div className="w-8 h-8 rounded bg-[#020204] border border-white/5 flex items-center justify-center text-[8px] text-white font-bold">#020</div>
-                </div>
-                <div className="text-[10px] text-white/60 font-medium">
-                  "Organic fluid dynamics meet mathematical precision."
+                  <div className="flex gap-2">
+                    <div className="w-8 h-8 rounded bg-[#ddb7ff] flex items-center justify-center text-[8px] text-black font-bold">#DDB</div>
+                    <div className="w-8 h-8 rounded bg-[#842bd2] flex items-center justify-center text-[8px] text-white font-bold">#842</div>
+                    <div className="w-8 h-8 rounded bg-[#44e2cd] flex items-center justify-center text-[8px] text-black font-bold">#44E</div>
+                    <div className="w-8 h-8 rounded bg-[#020204] border border-white/5 flex items-center justify-center text-[8px] text-white font-bold">#020</div>
+                  </div>
+                  <div className="text-[10px] text-white/60 font-medium">
+                    "Organic fluid dynamics meet mathematical precision."
+                  </div>
                 </div>
               </div>
-            </div>
-          </DeckCard>
+            </DeckCard>
 
-          <DeckCard
-            index={2}
-            title="Helios Dashboard V2"
-            category="Web App UI"
-            desc="Premium dark-mode web application design optimized for data heavy applications with beautiful analytics widgets."
-            accent="#842bd2"
-            tooltipEl={tooltipEl}
-          >
-            <div className="flex items-center justify-center p-4 md:p-6 bg-gradient-to-bl from-[#000511] to-[#0f1423] select-none min-h-[260px] md:min-h-[380px]">
-              <div className="w-[260px] md:w-[300px] h-[180px] md:h-[200px] rounded-xl border border-white/5 bg-[#020204]/85 p-3 md:p-4 relative overflow-hidden flex flex-col gap-2 md:gap-3 shadow-2xl">
-                <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+            <DeckCard
+              index={2}
+              title="Helios Dashboard V2"
+              category="Web App UI"
+              desc="Premium dark-mode web application design optimized for data heavy applications with beautiful analytics widgets."
+              accent="#842bd2"
+              tooltipEl={tooltipEl}
+            >
+              <div className="flex items-center justify-center p-4 md:p-6 bg-gradient-to-bl from-[#000511] to-[#0f1423] select-none min-h-[260px] md:min-h-[380px]">
+                <div className="w-[260px] md:w-[300px] h-[180px] md:h-[200px] rounded-xl border border-white/5 bg-[#020204]/85 p-3 md:p-4 relative overflow-hidden flex flex-col gap-2 md:gap-3 shadow-2xl">
+                  <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+                    </div>
+                    <span className="text-[9px] text-[#842bd2] font-bold tracking-widest uppercase">HELIOS OS</span>
                   </div>
-                  <span className="text-[9px] text-[#842bd2] font-bold tracking-widest uppercase">HELIOS OS</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 flex-grow">
-                  <div className="p-2 bg-white/[0.01] rounded-lg border border-white/5 flex flex-col justify-between">
-                    <span className="text-[6px] text-white/40 uppercase">Users</span>
-                    <span className="text-sm font-bold text-white">12.8k</span>
+                  <div className="grid grid-cols-3 gap-2 flex-grow">
+                    <div className="p-2 bg-white/[0.01] rounded-lg border border-white/5 flex flex-col justify-between">
+                      <span className="text-[6px] text-white/40 uppercase">Users</span>
+                      <span className="text-sm font-bold text-white">12.8k</span>
+                    </div>
+                    <div className="p-2 bg-white/[0.01] rounded-lg border border-white/5 flex flex-col justify-between">
+                      <span className="text-[6px] text-white/40 uppercase">Conversion</span>
+                      <span className="text-sm font-bold text-white">4.82%</span>
+                    </div>
+                    <div className="p-2 bg-white/[0.01] rounded-lg border border-white/5 flex flex-col justify-between">
+                      <span className="text-[6px] text-white/40 uppercase">Growth</span>
+                      <span className="text-sm font-bold text-[#44e2cd]">+24%</span>
+                    </div>
                   </div>
-                  <div className="p-2 bg-white/[0.01] rounded-lg border border-white/5 flex flex-col justify-between">
-                    <span className="text-[6px] text-white/40 uppercase">Conversion</span>
-                    <span className="text-sm font-bold text-white">4.82%</span>
+                  <div className="h-10 bg-white/[0.01] rounded-lg border border-white/5 p-1 relative flex items-end">
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#842bd2]/10 to-transparent" />
+                    <svg className="w-full h-full text-[#842bd2] opacity-80" viewBox="0 0 100 30" preserveAspectRatio="none">
+                      <path d="M0,30 L10,25 L20,28 L30,15 L40,20 L50,8 L60,14 L70,5 L80,12 L90,2 L100,10 L100,30 Z" fill="rgba(132, 43, 210, 0.2)" />
+                      <path d="M0,30 L10,25 L20,28 L30,15 L40,20 L50,8 L60,14 L70,5 L80,12 L90,2 L100,10" fill="none" stroke="currentColor" strokeWidth="2" />
+                    </svg>
                   </div>
-                  <div className="p-2 bg-white/[0.01] rounded-lg border border-white/5 flex flex-col justify-between">
-                    <span className="text-[6px] text-white/40 uppercase">Growth</span>
-                    <span className="text-sm font-bold text-[#44e2cd]">+24%</span>
-                  </div>
-                </div>
-                <div className="h-10 bg-white/[0.01] rounded-lg border border-white/5 p-1 relative flex items-end">
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#842bd2]/10 to-transparent" />
-                  <svg className="w-full h-full text-[#842bd2] opacity-80" viewBox="0 0 100 30" preserveAspectRatio="none">
-                    <path d="M0,30 L10,25 L20,28 L30,15 L40,20 L50,8 L60,14 L70,5 L80,12 L90,2 L100,10 L100,30 Z" fill="rgba(132, 43, 210, 0.2)" />
-                    <path d="M0,30 L10,25 L20,28 L30,15 L40,20 L50,8 L60,14 L70,5 L80,12 L90,2 L100,10" fill="none" stroke="currentColor" strokeWidth="2" />
-                  </svg>
                 </div>
               </div>
-            </div>
-          </DeckCard>
-        </div>
+            </DeckCard>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -1540,7 +1494,7 @@ const CTA = () => {
           <div
             className="rounded-full shadow-[0_0_40px_rgba(132,43,210,0.4)] relative z-20 transition-transform hover:scale-110 duration-500 cursor-pointer w-24 h-24"
             style={{
-              backgroundImage: "url('/logo1.png')",
+              backgroundImage: "url('/logo.png')",
               backgroundSize: "auto 100%",
               backgroundPosition: "left center",
               backgroundRepeat: "no-repeat",
@@ -1613,7 +1567,7 @@ const Footer = () => {
               style={{
                 width: "28px",
                 height: "28px",
-                backgroundImage: "url('/logo1.png')",
+                backgroundImage: "url('/logo.png')",
                 backgroundSize: "auto 28px",
                 backgroundPosition: "0px 0px",
                 backgroundRepeat: "no-repeat",
@@ -1677,7 +1631,7 @@ export default function App() {
       <ScrollManager />
       <Routes>
         <Route path="/" element={
-          <div className="min-h-screen relative selection-bg-primary/30 selection-text-white bg-[#020204]" id="root-container">
+          <div className="min-h-screen relative selection-bg-primary/30 selection-text-white bg-[#020204] overflow-x-hidden" id="root-container">
             <style>{customStyles}</style>
             <main id="main-content">
               <Hero />
@@ -1692,28 +1646,28 @@ export default function App() {
           </div>
         } />
         <Route path="/services" element={
-          <div className="min-h-screen relative selection-bg-primary/30 selection-text-white bg-[#020204]">
+          <div className="min-h-screen relative selection-bg-primary/30 selection-text-white bg-[#020204] overflow-x-hidden">
             <style>{customStyles}</style>
             <ServicesPage />
             <Footer />
           </div>
         } />
         <Route path="/pricing" element={
-          <div className="min-h-screen relative selection-bg-primary/30 selection-text-white bg-[#020204]">
+          <div className="min-h-screen relative selection-bg-primary/30 selection-text-white bg-[#020204] overflow-x-hidden">
             <style>{customStyles}</style>
             <PricingPage />
             <Footer />
           </div>
         } />
         <Route path="/portfolio" element={
-          <div className="min-h-screen relative selection-bg-primary/30 selection-text-white bg-[#020204]">
+          <div className="min-h-screen relative selection-bg-primary/30 selection-text-white bg-[#020204] overflow-x-hidden">
             <style>{customStyles}</style>
             <PortfolioPage />
             <Footer />
           </div>
         } />
         <Route path="/about" element={
-          <div className="min-h-screen relative selection-bg-primary/30 selection-text-white bg-[#020204]">
+          <div className="min-h-screen relative selection-bg-primary/30 selection-text-white bg-[#020204] overflow-x-hidden">
             <style>{customStyles}</style>
             <AboutPage />
             <Footer />

@@ -142,25 +142,33 @@ const BentoCard = ({ children, className, colSpan }: { children: React.ReactNode
 
   return (
     <motion.div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); setTilt({ x: 0, y: 0 }); }}
-      animate={{ rotateX: tilt.x, rotateY: tilt.y }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      style={{ transformStyle: "preserve-3d" }}
-      className={`relative rounded-3xl overflow-hidden bg-white/[0.01] border border-white/[0.08] backdrop-blur-md interactive group ${colSpan} ${className}`}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className={colSpan}
     >
-      {/* Glowing Tracking Border */}
-      <div 
-        className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{
-          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(140, 79, 218, 0.15), transparent 40%)`
-        }}
-      />
-      <div className="relative z-10 w-full h-full p-8 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
-        {children}
-      </div>
+      <motion.div
+        ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => { setIsHovered(false); setTilt({ x: 0, y: 0 }); }}
+        animate={{ rotateX: tilt.x, rotateY: tilt.y }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        style={{ transformStyle: "preserve-3d" }}
+        className={`relative rounded-3xl overflow-hidden bg-white/5 border border-white/10 backdrop-blur-md interactive group w-full h-full ${className}`}
+      >
+        {/* Glowing Tracking Border */}
+        <div 
+          className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          style={{
+            background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(140, 79, 218, 0.15), transparent 40%)`
+          }}
+        />
+        <div className="relative z-10 w-full h-full p-6 md:p-8 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+          {children}
+        </div>
+      </motion.div>
     </motion.div>
   );
 };
@@ -433,7 +441,7 @@ export default function ServicesPage() {
 
         {/* SERVICES BENTO GRID */}
         <section className="py-32 px-6 max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[400px]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-y-8 md:gap-6">
             {/* Card 1: Brand Architecture */}
             <BentoCard colSpan="md:col-span-2" className="flex flex-col justify-between">
               <div className="relative z-10 max-w-md">
@@ -471,19 +479,19 @@ export default function ServicesPage() {
             </BentoCard>
 
             {/* Card 3: Cinematic Post-Production */}
-            <BentoCard colSpan="md:col-span-3" className="flex flex-col md:flex-row justify-between items-center gap-8 overflow-hidden !p-0">
-               <div className="relative z-10 p-10 md:w-1/2 flex flex-col justify-center h-full bg-gradient-to-r from-[#030303] via-[#030303]/90 to-transparent">
+            <BentoCard colSpan="md:col-span-3" className="flex flex-col md:flex-row justify-between items-center gap-8 overflow-hidden p-0">
+              <div className="relative z-10 flex flex-col justify-center md:w-1/2 md:h-full">
                 <div className="w-14 h-14 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-6 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
                   <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <h3 className="text-3xl font-extrabold text-white mb-4 tracking-tight">Cinematic Motion</h3>
+                <h3 className="text-2xl md:text-3xl font-extrabold text-white mb-4 tracking-tight">Cinematic Motion</h3>
                 <p className="text-neutral-400 font-medium leading-relaxed max-w-sm">
                   Dynamic graphics system design, sound orchestration, and high-energy rhythm edits moving beyond templates.
                 </p>
               </div>
-              <div className="w-full md:w-2/3 h-64 md:h-full absolute right-0 bottom-0 md:top-0 z-0 mask-image-linear">
+              <div className="relative md:absolute w-full md:w-2/3 h-48 md:h-full right-0 bottom-0 md:top-0 z-0 mask-image-linear">
                 <VideoVisual />
               </div>
             </BentoCard>

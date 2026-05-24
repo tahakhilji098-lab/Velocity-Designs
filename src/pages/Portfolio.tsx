@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import { motion } from "motion/react";
 
 const portfolioStyles = `
   .noise-overlay {
@@ -200,13 +201,36 @@ export default function PortfolioPage() {
       <section className="relative px-6 pb-32 overflow-hidden" id="portfolio-grid">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,rgba(140,79,218,0.06)_0%,transparent_55%)] pointer-events-none z-0" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-6xl mx-auto mt-8 mb-24 relative z-10">
+        <motion.div
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: { staggerChildren: 0.15 },
+            },
+          }}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-6xl mx-auto mt-8 mb-24 relative z-10"
+        >
           {filteredProjects?.map((project, index) => (
-            <div key={project.title} className={index % 2 === 1 ? 'md:translate-y-12' : ''}>
+            <motion.div
+              key={project.title}
+              variants={{
+                hidden: { opacity: 0, y: 50 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.6, ease: "easeOut" },
+                },
+              }}
+              className={index % 2 === 1 ? 'md:translate-y-12' : ''}
+            >
               <ProjectCard project={project} />
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         {filteredProjects?.length === 0 && (
           <div className="text-center py-20 relative z-10">
